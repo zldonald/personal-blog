@@ -1,0 +1,212 @@
+---
+title: Solution
+---
+
+# The how
+
+We define taste as contextual human judgement: the decisions a person makes about what should be said, removed, implied, emphasised, preserved, or changed for a specific audience, intent, medium, and moment. This builds on the problem outlined in the <Backlink to="manifesto">Manifesto</Backlink>.
+
+Tact's core belief is that taste cannot be fully understood from the final output alone. It has to be traced through the decisions that produced the output:
+- What is the intent?
+- Who is this for?
+- What should be said plainly?
+- What should be implied?
+- What should be removed?
+- What tone fits the moment?
+- What tradeoff matters most?
+- Which version feels generic, forced, sharp, warm, precise, or memorable?
+- What shifts in topical or thematic approach occurred during the writing?
+
+Taste can be engineered because these decisions are subjective, but not random. They appear in drafts, edits, rejections, comparisons, protected phrases, tradeoffs, and outcomes. If we can capture those signals consistently, we can model the judgement patterns behind them.
+
+This is commonly known as decision tracing. We already practice this across many domains, such as mapping workflows across work processes: what specific actions were taken to complete X outcome in Y software. Taking the same theory, we can apply it to tracing a creative process.
+
+<Backlink to="market-competition">Competitors</Backlink> in the space are attempting to codify and analyse the final output of creative work. If we apply modern RLHF with only that kind of dataset, we again work towards the mean average of the data used for training.
+
+Instead of mapping just an output on a normalised scale from 0 to 1, A from B:
+
+```json
+{
+  "chosen": "...preferred assistant response...",
+  "rejected": "...less preferred assistant response..."
+}
+```
+
+Tact produces richer dataset objects containing judgement traces and blind human generation to battle mean reversion.
+
+| Data Mode | What It Captures | Risk |
+| --- | --- | --- |
+| Blind human generation | How humans approach the task from first principles | Slower, more expensive |
+| Human revision of AI output | How humans diagnose and repair AI failures | AI anchors the human |
+| Human vs AI blind comparison | Whether expert work actually differs from AI | Needs careful task design |
+
+Mean reversion happens when the model sets the starting distribution and human feedback only nudges outputs inside that distribution.
+
+Blind human generation separates human priors from model priors. We can see what the human did that the model never considered: the angle, structure, pacing, omission, tension, specificity, or risk. We then turn these into parameters of the data object.
+
+**Blind Task Design**
+
+```
+1. Give the same brief to a human and one or more AI models.
+2. Human writes without seeing AI output.
+3. AI generates independently.
+4. Experts/readers compare outputs blind.
+5. Human editor revises both outputs blind.
+6. Capture reasons, edits, rejections, rankings, and outcomes.
+```
+
+This lets us understand:
+
+- what humans naturally do
+- what AI naturally does
+- where AI is generic
+- where humans are genuinely better
+- where AI is already good enough
+- what human judgement adds during revision
+
+**Example Dataset Object**
+
+```json
+{
+  "task_id":"blind_essay_0042",
+  "brief": {
+    "task":"Write a 900-word essay on why AI makes work faster but flatter.",
+    "audience": ["AI founders","VCs","product leaders"],
+    "desired_effect": ["personal","credible","contrarian"],
+    "constraints": ["900-1100 words","no generic AI framing"]
+  },
+  "outputs": [
+    {
+      "output_id":"human_1",
+      "source":"human_blind",
+      "text":"...",
+      "author_profile":"founder/operator"
+    },
+    {
+      "output_id":"model_1",
+      "source":"ai_blind",
+      "model":"frontier_model_a",
+      "text":"..."
+    }
+  ],
+  "blind_evaluation": {
+    "reviewers": ["editor_01","founder_03","reader_08"],
+    "ranking": ["human_1","model_1"],
+    "reasons": [
+      {
+        "output_id":"human_1",
+        "reason":"More specific opening, stronger argument progression, less generic cadence."
+      },
+      {
+        "output_id":"model_1",
+        "reason":"Technically coherent but predictable and over-polished."
+      }
+    ]
+  },
+  "revision_trace": {
+    "editor_task":"Improve the strongest output and explain each major change.",
+    "selected_base":"human_1",
+    "edits": [
+      {
+        "before":"AI has made us faster.",
+        "after":"AI made the work faster, then quietly changed the standard for what I accepted.",
+        "reason":"Adds causality and personal stakes."
+      }
+    ]
+  }
+}
+```
+
+The above is one example of a task we can provide to tastemakers. The point is that much richer data objects can be captured than a simple preference pair.
+
+**The Product Flow**
+
+```
+Tact Creative Workbench
+(front-end web app for tastemakers)
+        ↓
+Tastemaker completes writing task
+(blind generation, AI comparison, revision, critique)
+        ↓
+In-session event capture
+(keystrokes, drafts, edits, rejections, rankings, comments, time-based actions)
+        ↓
+Judgment trace logging
+(context, intent, audience, alternatives, decisions, rationale, disagreement)
+        ↓
+Final submission
+(final output + revision history + evaluator notes + metadata)
+        ↓
+Judgment trace object compiled
+(structured record of the full creative decision process)
+        ↓
+Data ingestion + transformation pipeline
+(normalise, de-identify, validate, enrich, version)
+        ↓
+Tact data store
+(raw traces + cleaned traces + derived datasets)
+        ↓
+Internal data workbench
+(review, QA, label quality, resolve conflicts, preserve disagreement)
+        ↓
+Squash + merge interface
+(convert rich traces into customer-ready formats)
+        ↓
+Dataset exports
+(SFT rows, preference pairs, critique datasets, evals, judge/reranker data)
+        ↓
+Customers
+(frontier labs, AI writing products, CX agents, creative tools)
+```
+
+In the interest of products and frontier labs, we can squash and merge data to make it easy for post-training use. We would rather over-generate than under-generate; the rich trace is the source object, and the exported artefacts are what customers can use immediately.
+
+| Export | How It Improves Output |
+| --- | --- |
+| SFT rows | Teaches models expert writing and revision patterns |
+| Preference pairs | Teaches models to rank tasteful outputs above generic ones |
+| Critiques | Teaches models to diagnose why writing feels weak or AI-like |
+| Evals | Lets labs/products measure taste improvement |
+| Judge/reranker data | Lets products generate many outputs and select the strongest |
+| Personalisation profiles | Lets products preserve user or brand voice |
+
+---
+
+# FAQ
+
+<details>
+<summary>Where has this 'how' that you've proposed come from? How much of this is your own hypothesis vs research/known information?</summary>
+
+What is known: models can learn from demonstrations, preferences, critiques, evals, and post-training data. RLHF and preference learning are standard mechanisms. Workflow traces are already useful in enterprise process mapping.
+
+What is Tact's hypothesis: for subjective writing, the highest-value signal is not the final output or preference label, but the judgement trace: how the writer interpreted, explored, rejected, revised, and selected.
+
+</details>
+
+<details>
+<summary>Who are the tastemakers? What data will you need to collect?</summary>
+
+Tastemakers are not generic annotators. They are writers, editors, creative directors, founders, marketers, academics, and operators whose work already requires high-quality communication judgement.
+
+The first wedge is professional writing workflows where quality matters commercially: marketing copy, founder writing, executive communications, thought leadership, and high-stakes customer communication.
+
+We can measure improvement through expert preference, reader comprehension, perceived originality, brand fit, time-to-acceptable-draft, user acceptance/rejection rate etc.
+
+</details>
+
+<details>
+<summary>How is Tact different from Mercor?</summary>
+
+Mercor's core motion is expert labour for model training across domains. Tact's wedge is narrower and deeper: capturing the creative and communicative judgement process itself, through product surfaces designed to reveal decisions, not just collect answers.
+
+</details>
+
+<details>
+<summary>What's the greatest unproven assumption you have? The one that is most likely to kill the current idea/solution?</summary>
+
+The greatest unproven assumption is that judgement traces contain learnable signal that meaningfully improves AI writing beyond what labs and products can get from final outputs, preference labels, style guides, and normal user feedback.
+
+</details>
+
+See the <Backlink to="company-plan">Company Plan</Backlink> for hiring and team structure.
+

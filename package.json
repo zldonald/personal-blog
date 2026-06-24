@@ -1,10 +1,22 @@
 {
   "dependencies": {
-    "next": "^16.0.7"
+    "gray-matter": "^4.0.3",
+    "next": "^16.0.7",
+    "next-mdx-remote": "^6.0.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "rehype-pretty-code": "^0.14.3",
+    "remark-gfm": "^4.0.1",
+    "shiki": "^4.2.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start"
   }
 }
